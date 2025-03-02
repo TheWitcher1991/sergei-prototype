@@ -1,0 +1,43 @@
+name: sergei-preproduction
+
+version: '3'
+
+services:
+  nginx:
+    image: ${IMAGE_NAME_NGINX}:${IMAGE_TAG_NGINX}
+    container_name: nginx-service
+    volumes:
+      - ./docker/nginx/base-nginx.conf:/etc/nginx/base-nginx.conf:ro
+      - ./docker/nginx/ssl-dhparams.pem:/etc/nginx/ssl-dhparams.pem:ro
+      - ./docker/nginx/options-ssl-nginx.conf:/etc/letsencrypt/options-ssl-nginx.conf:ro
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - default
+    restart: always
+
+  certbot:
+    image: ${IMAGE_NAME_CERTBOT}:${IMAGE_TAG_CERTBOT}
+    container_name: certbot-service
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+    networks:
+      - default
+
+  client:
+    build:
+      context: ./clients
+      dockerfile: Dockerfile
+    container_name: client-service
+    networks:
+      - default
+    restart: always
+
+networks:
+  default:
+    driver: bridge
